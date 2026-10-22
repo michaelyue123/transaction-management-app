@@ -1,4 +1,3 @@
-```md
 # Transaction Management Frontend
 
 A React and TypeScript frontend for the Transaction Management App.

@@ -1,4 +1,3 @@
-```md
 # Transaction Management API
 
 A Java Spring Boot REST API for creating and managing transactions safely.
