@@ -1,0 +1,32 @@
+# macOS
+.DS_Store
+
+# Local environment files / secrets
+.env
+.env.*
+!.env.example
+application-local.properties
+
+# Backend: Java / Maven build output
+backend/target/
+*.class
+
+# Frontend: Node / Vite build output
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Local databases and logs
+*.mv.db
+*.trace.db
+*.log
+
+# IDE settings
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.classpath
+.project
+.settings/
