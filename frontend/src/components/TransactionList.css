@@ -1,0 +1,30 @@
+.transaction-table-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.transaction-table {
+  width: 100%;
+  border-collapse: collapse; /* 会将相邻 cell 的两条 border 合并成一条，避免边框看起来特别粗。*/
+}
+
+.transaction-table th,
+.transaction-table td {
+  border: 1px solid #6b7280;
+  padding: 12px 16px;
+  text-align: left;
+}
+
+.transaction-table th {
+  background-color: #2f2f2f;
+  font-weight: 700;
+}
+
+.transaction-table tbody tr:hover {
+  background-color: #292929;
+}
+
+.transaction-actions {
+  display: flex;
+  gap: 8px;
+}

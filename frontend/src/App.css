@@ -1,0 +1,62 @@
+.filter-contaienr {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 320px;
+  margin: 24px auto;
+}
+
+.filter-contaienr select {
+  flex: 1;
+  padding: 8px;
+}
+
+.search-container {
+  margin: 20px;
+  border: 3px solid grey ;
+  padding: 10px;
+}
+
+.error-message {
+  color: #ef4444;
+}
+
+.transaction-container {
+  border: 3px solid grey ;
+  padding: 10px;
+}
+
+#status-filter {
+  padding: 3px;
+}
+
+/* Container holding the header and the sorting tools */
+.header-actions-container {
+  display: flex;
+  align-items: center; /* Vertically centers header, label, and dropdown */
+  justify-content: space-between; /* Puts title on left, controls on far right */
+  margin-bottom: 16px;
+  width: 100%;
+}
+
+/* Sub-container grouping the label and dropdown together */
+.sort-controls {
+  display: flex;
+  align-items: center;
+  column-gap: 8px; /* Precise spacing between label and select box */
+}
+
+/* Custom styling for your dark mode dropdown menu */
+.dark-select-dropdown {
+  background-color: #27272a; /* Dark gray background */
+  color: #ffffff; /* White text */
+  border: 1px solid #3f3f46; /* Border line visible on black */
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.dark-label {
+  color: #d4d4d8; /* Light gray text for readability */
+  font-size: 14px;
+}

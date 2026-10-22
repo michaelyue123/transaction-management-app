@@ -1,0 +1,23 @@
+.ui-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 320px;
+  margin: 0 auto;
+  border: 3px solid grey ;
+  padding: 20px;
+}
+
+.ui-container input,
+.ui-container select {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+#customerId {
+  text-align: center;
+}
+
+#currency {
+  text-align: center;
+}
