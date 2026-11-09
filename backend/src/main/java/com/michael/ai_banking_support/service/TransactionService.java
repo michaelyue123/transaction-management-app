@@ -1,9 +1,10 @@
 package com.michael.ai_banking_support.service;
 
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -77,11 +78,11 @@ public class TransactionService {
                     .orElseThrow(() -> new TransactionNotFoundException(id));
     }
 
-    public List<Transaction> findTransactions(String customerId, TransactionStatus status) {
+    public Page<Transaction> findTransactions(String customerId, TransactionStatus status, Pageable pageable) {
         if(status == null) {
-            return transactionRepository.findByCustomerId(customerId);
+            return transactionRepository.findByCustomerId(customerId, pageable);
         }
-        return transactionRepository.findByCustomerIdAndStatus(customerId, status);
+        return transactionRepository.findByCustomerIdAndStatus(customerId, status, pageable);
     }
 
     @Transactional

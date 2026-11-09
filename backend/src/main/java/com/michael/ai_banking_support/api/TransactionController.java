@@ -2,6 +2,10 @@ package com.michael.ai_banking_support.api;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -16,7 +20,9 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.michael.ai_banking_support.api.dto.CreateTransactionRequest;
+import com.michael.ai_banking_support.api.dto.PageResponse;
 import com.michael.ai_banking_support.api.dto.TransactionResponse;
+import com.michael.ai_banking_support.domain.Transaction;
 import com.michael.ai_banking_support.domain.TransactionStatus;
 import com.michael.ai_banking_support.service.CreateTransactionResult;
 import com.michael.ai_banking_support.service.TransactionService;
@@ -62,15 +68,29 @@ public class TransactionController {
     }
     
     @GetMapping // @RequestParam → 查询、筛选、分页、排序等条件
-    public List<TransactionResponse> findTransactions(
+    public PageResponse findTransactions(
         @RequestParam String customerId,
-        @RequestParam(required = false) TransactionStatus status
+        @RequestParam(required = false) TransactionStatus status,
+        @PageableDefault(
+            size = 20,
+            sort = {"createdAt", "id"},
+            direction = Sort.Direction.DESC
+        )
+        Pageable pageable
     ) {
-        return transactionService
-                .findTransactions(customerId, status)
-                .stream()
-                .map(TransactionResponse::from)
-                .toList();
+        Page<Transaction> currentPage = transactionService.findTransactions(customerId, status, pageable);
+        List<TransactionResponse> transactions = currentPage.getContent()
+                                                            .stream()
+                                                            .map(TransactionResponse::from)
+                                                            .toList();
+
+        return new PageResponse(
+            transactions,
+            currentPage.getNumber(),
+            currentPage.getSize(),
+            currentPage.getTotalElements(),
+            currentPage.getTotalPages()
+        );     
     }
 
     @PostMapping("/{id}/complete")

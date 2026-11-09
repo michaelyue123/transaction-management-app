@@ -19,6 +19,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import com.michael.ai_banking_support.api.dto.CreateTransactionRequest;
 import com.michael.ai_banking_support.domain.Transaction;
@@ -197,4 +200,50 @@ class TransactionServiceTest {
                 .saveAndFlush(any(Transaction.class));
     }
 
+    @Test
+    void findTransactions_withoutStatus_shouldFindByCustomerId() {
+        // Arrange
+        String customerId = "customer-123";
+        Pageable pageable = PageRequest.of(0, 20);
+        Page<Transaction> expectedPage = Page.empty(pageable);
+
+        // Mock repository 的返回结果
+        when(transactionRepository.findByCustomerId(customerId, pageable))
+                .thenReturn(expectedPage);
+
+        // Act
+        // 调用 transactionService.findTransactions(...)
+        var result = transactionService.findTransactions(customerId, null, pageable);
+
+        // Assert
+        // 验证返回结果
+        assertEquals(expectedPage, result);
+
+        // 验证调用了正确的 repository 方法
+        verify(transactionRepository, times(1)).findByCustomerId(customerId, pageable);
+    }
+
+    @Test
+    void findTransactions_withStatus_shouldFindByCustomerIdAndStatus() {
+        // Arrange
+        String customerId = "customer-123";
+        TransactionStatus status = TransactionStatus.PENDING;
+        Pageable pageable = PageRequest.of(0, 20);
+        Page<Transaction> expectedPage = Page.empty(pageable);
+
+        // Mock repository 的返回结果
+        when(transactionRepository.findByCustomerIdAndStatus(customerId, status, pageable))
+                .thenReturn(expectedPage);
+
+        // Act
+        // 调用 transactionService.findTransactions(...)
+        var result = transactionService.findTransactions(customerId, status, pageable);
+
+        // Assert
+        // 验证返回结果
+        assertEquals(expectedPage, result);
+
+        // 验证调用了正确的 repository 方法
+        verify(transactionRepository, times(1)).findByCustomerIdAndStatus(customerId, status, pageable);
+    }
 }

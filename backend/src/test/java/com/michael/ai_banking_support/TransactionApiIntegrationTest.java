@@ -1,10 +1,12 @@
 package com.michael.ai_banking_support;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,6 +16,7 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -34,6 +37,47 @@ class TransactionApiIntegrationTest {
 
     @Autowired
     private TransactionTemplate transactionTemplate;
+
+    private final Transaction transactionA1 = new Transaction(
+                UUID.randomUUID().toString(),
+                "1234",
+                "customer-A",
+                "Water bill",
+                new BigDecimal("50.00"),
+                "AUD"
+    );
+
+    private final Transaction transactionA2 = new Transaction(
+            UUID.randomUUID().toString(),
+            "1235",
+            "customer-A",
+            "Gas bill",
+            new BigDecimal("20.00"),
+            "AUD"
+    );
+
+    private final Transaction transactionA3 = new Transaction(
+            UUID.randomUUID().toString(),
+            "1236",
+            "customer-A",
+            "Electricity bill",
+            new BigDecimal("79.00"),
+            "AUD"
+    );
+
+    private final Transaction transactionB1 = new Transaction(
+                UUID.randomUUID().toString(),
+                "1237",
+                "customer-B",
+                "Internet bill",
+                new BigDecimal("45.00"),
+                "AUD"
+    );
+
+    @BeforeEach
+    void setUp() {
+        transactionRepository.deleteAll();
+    }
 
     @Test
     void shouldHandleIdempotentCreateRequests() throws Exception {
@@ -131,5 +175,146 @@ class TransactionApiIntegrationTest {
         );
 
         assertEquals(ObjectOptimisticLockingFailureException.class, result.getClass());
+    }
+
+
+    @Test
+    void findTransactions_shouldReturnPagesForRequestedCustomer() throws Exception {
+        // Arrange
+        // 创建并保存用户 A 的 3 条交易 + B 的 1 条交易
+        transactionRepository.saveAllAndFlush(List.of(transactionA1, transactionA2, transactionA3, transactionB1));
+        //
+        // 给交易使用不同的 description，方便判断返回了哪几条。
+        // 确保排序字段的值可控，这样才能可靠地验证顺序。
+
+        // Act & Assert: 第一页
+        mockMvc.perform(get("/transactions")
+                        .param("customerId", "customer-A")
+                        .param("page", "0")
+                        .param("size", "2")
+                        .param("sort", "description,asc")) // 规定排序规则
+                .andExpect(status().isOk())
+                // 验证 transactions 长度为 2
+                .andExpect(jsonPath("$.transactions.length()").value(2))
+                // 验证 currentPage 为 0
+                .andExpect(jsonPath("$.currentPage").value(0))
+                // 验证 pageSize 为 2
+                .andExpect(jsonPath("$.pageSize").value(2))
+                // 验证 totalItems 为 3
+                .andExpect(jsonPath("$.totalItems").value(3))
+                // 验证 totalPages 为 2
+                .andExpect(jsonPath("$.totalPages").value(2))
+                // 验证返回的是用户 A 的预期交易
+                .andExpect(jsonPath("$.transactions[0].customerId").value("customer-A"))
+                .andExpect(jsonPath("$.transactions[1].customerId").value("customer-A"))
+                .andExpect(jsonPath("$.transactions[0].description").value("Electricity bill"))
+                .andExpect(jsonPath("$.transactions[1].description").value("Gas bill"));
+
+        // Act & Assert: 第二页
+        mockMvc.perform(get("/transactions")
+                        .param("customerId", "customer-A")
+                        .param("page", "1")
+                        .param("size", "2"))
+                .andExpect(status().isOk())
+                // 验证 transactions 长度为 1
+                .andExpect(jsonPath("$.transactions.length()").value(1))
+                // 验证 currentPage 为 1
+                .andExpect(jsonPath("$.currentPage").value(1))
+                // 验证 pageSize 为 2
+                .andExpect(jsonPath("$.pageSize").value(2))
+                // 验证 totalItems 为 3
+                .andExpect(jsonPath("$.totalItems").value(3))
+                // 验证 totalPages 为 2
+                .andExpect(jsonPath("$.totalPages").value(2))
+                // 验证返回的是用户 A 的剩余交易
+                .andExpect(jsonPath("$.transactions[0].customerId").value("customer-A"))
+                .andExpect(jsonPath("$.transactions[0].description").value("Water bill"));
+
+        mockMvc.perform(get("/transactions")
+                        .param("customerId", "customer-B")
+                        .param("page", "0")
+                        .param("size", "2")
+                        .param("sort", "description,asc")) // 规定排序规则
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.transactions.length()").value(1))
+                // 验证 currentPage 为 0
+                .andExpect(jsonPath("$.currentPage").value(0))
+                // 验证 pageSize 为 2
+                .andExpect(jsonPath("$.pageSize").value(2))
+                // 验证 totalItems 为 1
+                .andExpect(jsonPath("$.totalItems").value(1))
+                // 验证 totalPages 为 1
+                .andExpect(jsonPath("$.totalPages").value(1))
+                .andExpect(jsonPath("$.transactions[0].customerId").value("customer-B"))
+                .andExpect(jsonPath("$.transactions[0].description").value("Internet bill"))
+                .andExpect(jsonPath("$.transactions[0].amount").value(45.0));
+    }
+
+    @Test
+    void findTransactions_withStatus_shouldReturnOnlyMatchingTransactions()
+            throws Exception {
+
+        // Arrange
+        // 创建并保存上表中的 4 条交易
+        // 注意：创建后将 Electricity bill 转成 COMPLETED
+        String transactionId = transactionA3.getId();
+
+        transactionRepository.saveAllAndFlush(
+            List.of(transactionA1, transactionA2, transactionA3, transactionB1));
+
+        Transaction transaction = transactionRepository.findById(transactionId).orElseThrow();
+        
+        transaction.complete();
+
+        transactionRepository.saveAndFlush(transaction);
+        
+        // Act & Assert
+        mockMvc.perform(get("/transactions")
+                        .param("customerId", "customer-A")
+                        .param("status", "PENDING")
+                        .param("page", "0")
+                        .param("size", "1")
+                        .param("sort", "description,asc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.currentPage").value(0))
+                // 验证这一页有 1 条交易
+                .andExpect(jsonPath("$.transactions.length()").value(1))
+                // 验证 totalItems 为 2、totalPages 为 2
+                .andExpect(jsonPath("$.totalItems").value(2))
+                .andExpect(jsonPath("$.totalPages").value(2))
+                // 验证返回的是 Gas bill，状态为 PENDING
+                .andExpect(jsonPath("$.transactions[0].description").value("Gas bill"))
+                .andExpect(jsonPath("$.transactions[0].status").value("PENDING"));
+
+         mockMvc.perform(get("/transactions")
+                        .param("customerId", "customer-A")
+                        .param("status", "PENDING")
+                        .param("page", "1")
+                        .param("size", "1")
+                        .param("sort", "description,asc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.currentPage").value(1))
+                // 验证这一页有 1 条交易
+                .andExpect(jsonPath("$.transactions.length()").value(1))
+                // 验证 totalItems 为 2、totalPages 为 2
+                .andExpect(jsonPath("$.totalItems").value(2))
+                .andExpect(jsonPath("$.totalPages").value(2))
+                // 验证返回的是 Water bill，状态为 PENDING
+                .andExpect(jsonPath("$.transactions[0].description").value("Water bill"))
+                .andExpect(jsonPath("$.transactions[0].status").value("PENDING"));
+
+        mockMvc.perform(get("/transactions")
+                        .param("customerId", "customer-A")
+                        .param("status", "COMPLETED")
+                        .param("page", "0")
+                        .param("size", "1")
+                        .param("sort", "description,asc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.transactions.length()").value(1))
+                .andExpect(jsonPath("$.totalItems").value(1))
+                .andExpect(jsonPath("$.totalPages").value(1))
+                // 验证返回的是 Electricity bill，状态为 COMPLETED
+                .andExpect(jsonPath("$.transactions[0].description").value("Electricity bill"))
+                .andExpect(jsonPath("$.transactions[0].status").value("COMPLETED"));
     }
 }
