@@ -1,6 +1,7 @@
 package com.michael.ai_banking_support;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -14,6 +15,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -71,6 +73,24 @@ class TransactionApiIntegrationTest {
                 "customer-B",
                 "Internet bill",
                 new BigDecimal("45.00"),
+                "AUD"
+    );
+
+    private final Transaction transactionC1 = new Transaction(
+                "transaction-001",
+                "1238",
+                "customer-C",
+                "Grocery bill",
+                new BigDecimal("90.0"),
+                "AUD"
+    );
+
+    private final Transaction transactionC2 = new Transaction(
+                "transaction-002",
+                "1239",
+                "customer-C",
+                "Credit Card bill",
+                new BigDecimal("1500.0"),
                 "AUD"
     );
 
@@ -317,4 +337,68 @@ class TransactionApiIntegrationTest {
                 .andExpect(jsonPath("$.transactions[0].description").value("Electricity bill"))
                 .andExpect(jsonPath("$.transactions[0].status").value("COMPLETED"));
     }
+
+    @Test
+        void findTransactions_withoutSort_shouldOrderByCreatedAtDescending()
+                throws Exception {
+
+        // Arrange
+        // 创建并保存同一用户的 3 条交易
+        ReflectionTestUtils.setField(
+                transactionA1,
+                "createdAt",
+                Instant.parse("2026-01-01T10:00:00Z")
+        );
+
+        ReflectionTestUtils.setField(
+                transactionA2,
+                "createdAt",
+                Instant.parse("2026-01-01T11:00:00Z")
+        );
+
+        ReflectionTestUtils.setField(
+                transactionA3,
+                "createdAt",
+                Instant.parse("2026-01-01T12:00:00Z")
+        );
+
+        ReflectionTestUtils.setField(
+                transactionC1,
+                "createdAt",
+                Instant.parse("2026-01-02T12:00:00Z")
+        );
+
+        ReflectionTestUtils.setField(
+                transactionC2,
+                "createdAt",
+                Instant.parse("2026-01-02T12:00:00Z")
+        );
+
+        transactionRepository.saveAllAndFlush(
+            List.of(transactionA1, transactionA2, transactionA3, transactionC1, transactionC2));
+        
+
+        // Act & Assert
+        mockMvc.perform(get("/transactions")
+                        .param("customerId", "customer-A"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.transactions.length()").value(3))
+                // 验证 Electricity bill 在第 0 位
+                .andExpect(jsonPath("$.transactions[0].description").value("Electricity bill"))
+                // 验证 Gas bill 在第 1 位
+                .andExpect(jsonPath("$.transactions[1].description").value("Gas bill"))
+                // 验证 Water bill 在第 2 位
+                .andExpect(jsonPath("$.transactions[2].description").value("Water bill"));
+
+        mockMvc.perform(get("/transactions")
+                        .param("customerId", "customer-C"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.transactions.length()").value(2))
+                // 验证 Credit Card bill 在第 0 位
+                .andExpect(jsonPath("$.transactions[0].description").value("Credit Card bill"))
+                // 验证 Grocery bill 在第 1 位
+                .andExpect(jsonPath("$.transactions[1].description").value("Grocery bill"))
+                .andExpect(jsonPath("$.transactions[0].id").value("transaction-002"))
+                .andExpect(jsonPath("$.transactions[1].id").value("transaction-001"));
+        }
 }
