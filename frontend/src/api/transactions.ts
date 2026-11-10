@@ -1,4 +1,4 @@
-import type { CreateTransactionRequest, Transaction, TransactionStatus } from "../types/transaction";
+import type { CreateTransactionRequest, PageResponse, Transaction, TransactionStatus } from "../types/transaction";
 
 const baseURL = "http://localhost:8080/transactions";
 
@@ -6,19 +6,23 @@ export type TransactionAction = "complete" | "fail";
 
 export async function fetchTransactions(
     customerId: string, 
-    status?: TransactionStatus
-): Promise<Transaction[]> {
+    status: TransactionStatus | undefined,
+    page: number,
+    size: number,
+    sort: string
+): Promise<PageResponse> {
     const params = new URLSearchParams({
         customerId,
+        page: String(page),
+        size: String(size),
+        sort
     });
 
     if(status) {
         params.set("status", status);
     }
 
-    const response = await fetch(
-        `${baseURL}?${params.toString()}`
-    );
+    const response = await fetch(`${baseURL}?${params.toString()}`);
 
     checkResponse(response);
 

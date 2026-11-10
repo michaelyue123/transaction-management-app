@@ -15,6 +15,13 @@ type TransactionSortBy =
 | "Amount: high to low"
 | "Amount: low to high"
 
+const sortOptions: Record<TransactionSortBy, string> = {
+  "Newest first": "createdAt,desc",
+  "Oldest first": "createdAt,asc",
+  "Amount: high to low": "amount,desc",
+  "Amount: low to high": "amount,asc"
+};
+
 function App() {
   const [transactions, setTransactions] = useState<Transaction[]>([]); 
   // customerId input and status input
@@ -27,6 +34,10 @@ function App() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<TransactionSortBy>("Newest first");
+
+  // Pagination
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   
   useEffect(() => {
     if(!selectedCustomerId) {
@@ -43,9 +54,10 @@ function App() {
             ? undefined
             : selectedStatus;
   
-        const data = await fetchTransactions(selectedCustomerId, status);
+        const data = await fetchTransactions(selectedCustomerId, status, page, 5, sortOptions[sortBy]);
   
-        setTransactions(data);
+        setTransactions(data.transactions);
+        setTotalPages(data.totalPages);
       } catch (error: unknown) {
         if(error instanceof Error) {
           setError(error.message);
@@ -58,13 +70,7 @@ function App() {
     }
 
     loadTransactions();
-  }, [selectedCustomerId, selectedStatus]);
-
-  // const handleDeleteTransaction = (id: string) => {
-  //   setTransactions((currentTransactions => currentTransactions.filter(
-  //     (transaction) => transaction.id !== id
-  //   )));
-  // }
+  }, [selectedCustomerId, selectedStatus, page, sortBy]);
 
   const handleCreateTransaction = async (request: CreateTransactionRequest) => {
     const createdTransaction: Transaction = 
@@ -90,29 +96,7 @@ function App() {
       return currentTransaction.map((transaction) => 
         transaction.id === id ? updatedTransaction : transaction);
     });
-  }
-
-  // React Hook that caches the result of a calculation between re-renders to optimize performance
-  const sortedTransactions = useMemo(() => {
-    const result = [...transactions]; 
-
-    switch (sortBy) {
-      case "Newest first":
-        return result
-            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      case "Oldest first":
-        return result
-            .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-      case "Amount: low to high":
-        return result
-            .sort((a, b) => a.amount - b.amount);
-      case "Amount: high to low":
-        return result
-            .sort((a, b) => b.amount - a.amount);
-      default :
-        return transactions;
-    }
-  }, [transactions, sortBy])
+  }  
 
   return (
     <div style={{ margin: "30px" }}>
@@ -175,7 +159,10 @@ function App() {
             <select
               id="sort-by"
               value={sortBy}
-              onChange={(event) => setSortBy(event.target.value as TransactionSortBy)}
+              onChange={(event) => {
+                setPage(0);
+                setSortBy(event.target.value as TransactionSortBy);
+              }}
               className="dark-select-dropdown"
             >
               <option value="Newest first">Newest first</option>
@@ -198,11 +185,35 @@ function App() {
           <p>No transactions found.</p>
         )}
 
-        {!isLoading && !error && sortedTransactions.length > 0 && (
-          <TransactionList 
-            transactions={sortedTransactions} 
+        {!isLoading && !error && transactions.length > 0 && (
+          <TransactionList
+            transactions={transactions}
             onUpdateStatus={handleTransaction}
           />
+        )}
+
+        {selectedCustomerId && !isLoading && !error && totalPages > 0 && (
+          <div className="pagination">
+            <button
+              type="button"
+              disabled={page === 0}
+              onClick={() => setPage(page - 1)}
+            >
+              Previous
+            </button>
+
+            <span>
+              {" "}Page {page + 1} of {totalPages}{" "}
+            </span>
+
+            <button
+              type="button"
+              disabled={page >= totalPages - 1}
+              onClick={() => setPage(page + 1)}
+            >
+              Next
+            </button>
+          </div>
         )}
       </div>
     </div>

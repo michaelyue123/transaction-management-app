@@ -19,3 +19,11 @@ export type TransactionStatus =
 | "PENDING"
 | "COMPLETED"
 | "FAILED"
+
+export interface PageResponse {
+  transactions: Transaction[];
+  currentPage: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+}
