@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import { TransactionList } from "./components/TransactionList"
 import type { CreateTransactionRequest, Transaction, TransactionStatus } from "./types/transaction"
 import { TransactionForm } from "./components/TransactionForm";
@@ -38,6 +38,9 @@ function App() {
   // Pagination
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+
+  // Refresh upon submission
+  const [refreshCount, setRefreshCount] = useState(0);
   
   useEffect(() => {
     if(!selectedCustomerId) {
@@ -70,17 +73,18 @@ function App() {
     }
 
     loadTransactions();
-  }, [selectedCustomerId, selectedStatus, page, sortBy]);
+  }, [selectedCustomerId, selectedStatus, page, sortBy, refreshCount]);
 
-  const handleCreateTransaction = async (request: CreateTransactionRequest) => {
-    const createdTransaction: Transaction = 
-      await createTransaction(request);
+  const handleCreateTransaction = async (
+    request: CreateTransactionRequest
+  ) => {
+    await createTransaction(request);
 
-    setTransactions((currentTransaction) => [
-      ...currentTransaction,
-      createdTransaction
-    ])
-  }
+    // 只有新交易属于当前搜索的用户时，才需要刷新列表
+    if (request.customerId === selectedCustomerId) {
+      setRefreshCount((count) => count + 1);
+    }
+  };
 
   const handleTransaction = async (id: string, action: TransactionAction) => {
     const updatedTransaction: Transaction = 
@@ -99,13 +103,31 @@ function App() {
   }  
 
   return (
-    <div style={{ margin: "30px" }}>
+    <main className="app-shell">
+      <header className="page-header">
+        <div className="brand-mark" aria-hidden="true">T</div>
+        <div>
+          <p className="eyebrow">TRANSACTION MANAGEMENT</p>
+          <h1>Financial dashboard</h1>
+          <p className="page-description">
+            Create, search, and manage customer transactions in one place.
+          </p>
+        </div>
+      </header>
+
       <TransactionForm onCreate={handleCreateTransaction} />
 
       <section className="search-container">
-        <h2>Search Transaction</h2>
+        <div className="section-heading">
+          <div>
+            <p className="section-kicker">TRANSACTION HISTORY</p>
+            <h2>Find transactions</h2>
+          </div>
+          <p className="section-hint">Search by customer and narrow by status.</p>
+        </div>
 
         <form
+          className="search-form"
           onSubmit={(event) => {
             event.preventDefault();
 
@@ -119,42 +141,42 @@ function App() {
             setSelectedStatus(statusInput);
           }}
         >
-          <label htmlFor="search-customer-id">
-            Customer ID
-          </label>
-          {" "}
-          <input 
-            id="search-customer-id"
-            autoComplete="off"
-            value={customerIdInput}
-            onChange={(event) => setCustomerIdInput(event.target.value)}
-          />
-          {" "}
-          <label htmlFor="status-filter">Status</label>
-          {" "}
-          <select
-            id="status-filter"
-            value={statusInput}
-            onChange={(event) => setStatusInput(event.target.value as StatusFilter)}
-          >
-            <option value="ALL">ALL</option>
-            <option value="PENDING">PENDING</option>
-            <option value="COMPLETED">COMPLETED</option>
-            <option value="FAILED">FAILED</option>
-          </select>
-          {" "}
-          <button type="submit">Search</button>
+          <div className="search-field customer-search-field">
+            <label htmlFor="search-customer-id">Customer ID</label>
+            <input
+              id="search-customer-id"
+              autoComplete="off"
+              placeholder="Enter a customer ID"
+              value={customerIdInput}
+              onChange={(event) => setCustomerIdInput(event.target.value)}
+            />
+          </div>
+          <div className="search-field">
+            <label htmlFor="status-filter">Status</label>
+            <select
+              id="status-filter"
+              value={statusInput}
+              onChange={(event) => setStatusInput(event.target.value as StatusFilter)}
+            >
+              <option value="ALL">All statuses</option>
+              <option value="PENDING">Pending</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="FAILED">Failed</option>
+            </select>
+          </div>
+          <button className="button button-primary search-button" type="submit">Search</button>
         </form>
       </section>
 
       <div className="transaction-container">
         <div className="header-actions-container">
-          <h2 style={{ margin: 0, textAlign: "center"}}>Transactions</h2>
+          <div>
+            <p className="section-kicker">OVERVIEW</p>
+            <h2>Transactions</h2>
+          </div>
 
           <div className="sort-controls">
-            <label htmlFor="sort-by" className="dark-label">
-              Sort By
-            </label>
+            <label htmlFor="sort-by" className="dark-label">Sort by</label>
             
             <select
               id="sort-by"
@@ -173,16 +195,16 @@ function App() {
           </div>
         </div>
 
-        {isLoading && <p>Loading transactions...</p>}
+        {isLoading && <p className="list-message" role="status">Loading transactions...</p>}
 
         {error && (
-          <p className="error-message">
+          <p className="error-message list-message" role="alert">
             {error}
           </p>
         )}
 
         {!isLoading && !error && transactions.length === 0 && (
-          <p>No transactions found.</p>
+          <p className="list-message">No transactions found.</p>
         )}
 
         {!isLoading && !error && transactions.length > 0 && (
@@ -195,6 +217,7 @@ function App() {
         {selectedCustomerId && !isLoading && !error && totalPages > 0 && (
           <div className="pagination">
             <button
+              className="button button-secondary"
               type="button"
               disabled={page === 0}
               onClick={() => setPage(page - 1)}
@@ -202,11 +225,10 @@ function App() {
               Previous
             </button>
 
-            <span>
-              {" "}Page {page + 1} of {totalPages}{" "}
-            </span>
+            <span className="page-indicator">Page {page + 1} of {totalPages}</span>
 
             <button
+              className="button button-secondary"
               type="button"
               disabled={page >= totalPages - 1}
               onClick={() => setPage(page + 1)}
@@ -216,7 +238,7 @@ function App() {
           </div>
         )}
       </div>
-    </div>
+    </main>
   )
 }
 

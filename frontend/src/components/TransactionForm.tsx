@@ -57,59 +57,78 @@ export function TransactionForm({ onCreate }: TransactionFormProps) {
 
     return (
         <form className="ui-container" onSubmit={handleSubmit}>
-            <h2>Create Transaction</h2>
-            <label htmlFor="customerId">CustomerId</label> 
-            <input 
-                id="customerId"
-                type="text"
-                placeholder="Enter customer id"
-                autoComplete="off"
-                required
-                value={customerId}
-                onChange={(event) => setCustomerId(event.target.value)}
-            />
+            <div className="form-heading">
+                <div>
+                    <p className="section-kicker">NEW ENTRY</p>
+                    <h2>Create transaction</h2>
+                </div>
+                <span className="form-note">All fields are required</span>
+            </div>
 
-            <label htmlFor="description">Description</label> 
-            <input 
-                id="description"
-                type="text"
-                required
-                value={description}
-                onChange={(event) => setDescription(event.target.value)}
-            />
+            <div className="form-fields">
+                <div className="form-field">
+                    <label htmlFor="customerId">Customer ID</label>
+                    <input
+                        id="customerId"
+                        type="text"
+                        placeholder="Enter customer ID"
+                        autoComplete="off"
+                        required
+                        value={customerId}
+                        onChange={(event) => setCustomerId(event.target.value)}
+                    />
+                </div>
 
-            <label htmlFor="amount">Amount</label>
-            <input
-                id="amount"
-                type="number"
-                min="0.01"
-                step="0.01"
-                required
-                value={amount}
-                onChange={(event) => setAmount(event.target.value)}
-            />
+                <div className="form-field form-field-description">
+                    <label htmlFor="description">Description</label>
+                    <input
+                        id="description"
+                        type="text"
+                        placeholder="e.g. Monthly subscription"
+                        required
+                        value={description}
+                        onChange={(event) => setDescription(event.target.value)}
+                    />
+                </div>
 
-            <label htmlFor="currency">Currency</label>
-            <select
-                id="currency"
-                value={currency}
-                required
-                onChange={(event) => setCurrency(event.target.value)}
-            >
-                <option value="AUD">AUD</option>
-                <option value="USD">USD</option>
-                <option value="CNY">CNY</option>
-            </select>
-            <button 
-                type="submit"
-                disabled={isSubmitting}
-            >
-                {isSubmitting
-                    ? "Creating..."
-                    : "Create Transaction"}
-            </button>
+                <div className="form-field">
+                    <label htmlFor="amount">Amount</label>
+                    <input
+                        id="amount"
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        placeholder="0.00"
+                        required
+                        value={amount}
+                        onChange={(event) => setAmount(event.target.value)}
+                    />
+                </div>
+
+                <div className="form-field">
+                    <label htmlFor="currency">Currency</label>
+                    <select
+                        id="currency"
+                        value={currency}
+                        required
+                        onChange={(event) => setCurrency(event.target.value)}
+                    >
+                        <option value="AUD">AUD</option>
+                        <option value="USD">USD</option>
+                        <option value="CNY">CNY</option>
+                    </select>
+                </div>
+
+                <button
+                    className="button button-primary create-button"
+                    type="submit"
+                    disabled={isSubmitting}
+                >
+                    {isSubmitting ? "Creating..." : "Create transaction"}
+                </button>
+            </div>
             {submitError && (
-                <p className="error-message">
+                <p className="error-message form-error" role="alert">
                     {submitError}
                 </p>
             )}

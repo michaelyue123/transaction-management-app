@@ -40,23 +40,36 @@ export function TransactionList({
                 <tbody>
                     {transactions.map((transaction) => (
                         <tr key={transaction.id}>
-                            <td>{transaction.description}</td>
-                            <td>
+                            <td className="description-cell">{transaction.description}</td>
+                            <td className="amount-cell">
                                 {transaction.amount} {transaction.currency}
                             </td>
                             <td>
                                 {simplifyCreatedAt(transaction.createdAt)}
                             </td>
-                            <td>{transaction.status}</td>
+                            <td>
+                                <span className={`status-badge status-${transaction.status.toLowerCase()}`}>
+                                    <span className="status-dot" aria-hidden="true" />
+                                    {transaction.status}
+                                </span>
+                            </td>
                             <td>
                                 <span className="transaction-actions">
                                     {transaction.status === "PENDING" && (
                                         <>
-                                        <button onClick={() => onUpdateStatus(transaction.id, "complete")}>
+                                        <button
+                                            className="button button-success"
+                                            type="button"
+                                            onClick={() => onUpdateStatus(transaction.id, "complete")}
+                                        >
                                             Complete
                                         </button>
 
-                                        <button onClick={() => onUpdateStatus(transaction.id, "fail")}>
+                                        <button
+                                            className="button button-danger"
+                                            type="button"
+                                            onClick={() => onUpdateStatus(transaction.id, "fail")}
+                                        >
                                             Fail
                                         </button>
                                         </>

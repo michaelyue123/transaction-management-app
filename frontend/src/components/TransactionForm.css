@@ -1,23 +1,71 @@
 .ui-container {
+  padding: 22px 24px;
+}
+
+.form-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.form-note {
+  color: #8290a4;
+  font-size: 0.76rem;
+}
+
+.form-fields {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.9fr) minmax(200px, 1.5fr) minmax(110px, 0.65fr) minmax(100px, 0.55fr) auto;
+  align-items: end;
+  gap: 14px;
+}
+
+.form-field {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  width: 320px;
-  margin: 0 auto;
-  border: 3px solid grey ;
-  padding: 20px;
+  gap: 7px;
+  min-width: 0;
 }
 
-.ui-container input,
-.ui-container select {
-  width: 100%;
-  box-sizing: border-box;
+.create-button {
+  min-height: 42px;
+  white-space: nowrap;
 }
 
-#customerId {
-  text-align: center;
+.form-error {
+  margin: 12px 0 0;
+  font-size: 0.84rem;
 }
 
-#currency {
-  text-align: center;
+@media (max-width: 900px) {
+  .form-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .form-field-description {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 520px) {
+  .ui-container {
+    padding: 18px;
+  }
+
+  .form-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .form-fields {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .form-field-description {
+    grid-column: auto;
+  }
 }
