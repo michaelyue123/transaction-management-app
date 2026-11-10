@@ -1,19 +1,22 @@
 # Transaction Management App
 
-A full-stack transaction management application built with a React frontend and a Java Spring Boot backend.
+A full-stack transaction management application with a React and TypeScript dashboard backed by a Java Spring Boot REST API. Create transactions, find them by customer, filter and sort paginated results, and update the status of pending transactions.
 
-The project demonstrates production-oriented backend engineering practices, including REST API design, request validation, idempotent operations, concurrency control, transaction state management and automated testing.
+## Dashboard
+
+![Transaction Management dashboard](docs/images/transaction-dashboard.png)
 
 ## Features
 
-- Create, retrieve and filter transactions
-- Complete or fail pending transactions
-- Idempotent transaction creation using an `Idempotency-Key`
-- Protection against duplicate concurrent create requests
-- Optimistic locking for concurrent transaction updates
-- Explicit transaction state transitions
-- Validation and consistent API error responses
-- Automated unit and integration tests
+- Create transactions with a customer ID, description, amount and currency
+- Search transactions by customer ID and optionally filter by `PENDING`, `COMPLETED` or `FAILED` status
+- Sort and paginate transaction results through the backend API
+- Complete or fail pending transactions, with invalid state transitions rejected
+- Retrieve a transaction by ID through the REST API
+- Make transaction creation idempotent with an `Idempotency-Key`, including safe handling of concurrent duplicate requests and mismatched key reuse
+- Use optimistic locking to protect concurrent transaction updates
+- Validate requests and return consistent API errors
+- Verify domain, service and API behavior with automated unit and integration tests
 
 ## Tech Stack
 
