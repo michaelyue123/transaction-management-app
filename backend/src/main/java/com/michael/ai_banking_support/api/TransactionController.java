@@ -1,6 +1,7 @@
 package com.michael.ai_banking_support.api;
 
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.michael.ai_banking_support.api.dto.CreateTransactionRequest;
 import com.michael.ai_banking_support.api.dto.PageResponse;
@@ -38,6 +40,13 @@ public class TransactionController {
     public TransactionController(TransactionService transactionService) {
         this.transactionService = transactionService;
     }
+
+    private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(
+            "createdAt",
+            "amount",
+            "id",
+            "description"
+    );
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -78,6 +87,17 @@ public class TransactionController {
         )
         Pageable pageable
     ) {
+        for(Sort.Order order : pageable.getSort()) {
+            String field = order.getProperty();
+ 
+            if(!ALLOWED_SORT_FIELDS.contains(field)) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Unsupported sort field: " + field
+                );
+            }
+        }
+
         Page<Transaction> currentPage = transactionService.findTransactions(customerId, status, pageable);
         List<TransactionResponse> transactions = currentPage.getContent()
                                                             .stream()
